@@ -9,8 +9,8 @@ output:
 ## I conducted 5 runs for each K value
 rm(list=ls())
 gname = "HGDP.hg19"
-rdwd = "C:\\Users\\jeju2\\Desktop\\Data\\ADMIXTURE\\ADMIXTURE_result"
-setwd("C:/Users/jeju2/Desktop/Data/ADMIXTURE")
+rdwd = "C:\\ADMIXTURE\\ADMIXTURE_result\\"
+setwd("C:\\ADMIXTURE")
 ```
 
 ```{r}
@@ -20,14 +20,14 @@ CVs = read.table(paste(rdwd,gname, "_CVerror", sep=""), header=F)
 
 ```{r}
 ## box plot for CV errors of all replicates
-png(paste(gname, "_CVerror_all.png", sep=""), height=20, width=1.5*ncol(CVs), res=300, units="cm")
+#png(paste(gname, "_CVerror_all.png", sep=""), height=20, width=1.5*ncol(CVs), res=300, units="cm")
 par(cex.main=1.2, cex.axis=1, cex.lab=1)
 par(mar=c(5.1,4.6,4.1,2.1))
 boxplot(CVs, xlab="K", ylab="CV error", xaxt="n", main="")
 mtext(3, text=gname, line=2.2, cex=1.3, font=2)
 mtext(3, text="CV error for all replicates", line=0.8, cex=1.2)
 axis(side=1, at=1:ncol(CVs), label=(1:ncol(CVs))+2)
-dev.off()
+#dev.off()
 ```
 ```{r}
 ## Generate random colors for each component
@@ -35,6 +35,7 @@ cvals.all = grDevices::colors()[grep('gr(a|e)y', grDevices::colors(), invert = T
 set.seed(332); cvals = sample(cvals.all, 50, replace=F)
 cvals[3] = "darkgoldenrod2"
 
+print(unique(cvals))
 ```
 
 ```{r}
@@ -48,11 +49,14 @@ tiids = as.vector(d1$ID)
 
 pdata = data.frame(tpids, tiids); names(pdata) = names(d1)[1:2]
 d1 = d1[, 3:ncol(d1)]; tpopvec = as.vector(as.matrix(pdata[,1]))
+
+print(head(d1[,1:3]))
 ```
 
 ```{r}
 ## Import ordered population IDs and keep those present in the data
 ## Also, import the plotting group labels
+
 popinfo = read.table(paste(gname, "popinfo", sep="."), header=F)
 names(popinfo) = c("Pop","geo")
 popinfo.fv = c()
@@ -62,6 +66,9 @@ for (i in 1:nrow(popinfo)) {
 popinfo = popinfo[popinfo.fv, ]
 pnames = as.vector(as.matrix(popinfo[,1]))
 grnames = as.vector(popinfo$geo)
+
+print(paste("#people in total population :",length(tpopvec),sep=" "))
+print(paste("#type of population :",nrow(popinfo),sep=" "))
 ```
 
 ```{r}
@@ -72,7 +79,9 @@ LFnames = as.vector(unique(LFs))
 set.seed(332)
 rgbcolvec = matrix(sample(0:255, length(LFnames)*3, replace=T), ncol=3, byrow=T)
 LFcols = rgb(rgbcolvec[,1], rgbcolvec[,2], rgbcolvec[,3], maxColorValue=255)
+
 ```
+
 ```{r}
 ## First, reorder data by the given order or populations
 ## and generate per-individual plotting group name vector
@@ -83,7 +92,10 @@ for (i in 1:length(pnames)) {
   lg.cv = c(lg.cv, rep(tlg.col, sum(tpopvec == pnames[i])))
   ords = c(ords, which(tpopvec == pnames[i]))
 }
+```
 
+
+```{r}
 blank.nums = c(); t.gr = grnv[1]
 for (i in 2:length(grnv)) {
   if (grnv[i] != t.gr) {
@@ -91,7 +103,9 @@ for (i in 2:length(grnv)) {
     t.gr = grnv[i]
   }
 }
-
+print(paste("blank rows betwwen", blank.nums,blank.nums+1,sep=" "))
+```
+```{r}
 lg.cv2 = rep("white", length(lg.cv)+length(blank.nums))
 lg.cv2[-1*blank.nums] = lg.cv
 lg.cv = lg.cv2
@@ -107,6 +121,9 @@ d2[-1*blank.nums, -1*empty.cnums] = as.matrix(d1)[ords, ]
 d2[blank.nums, empty.cnums] = 1
 popvec[-1*blank.nums] = as.vector(as.matrix(pdata[,1]))[ords]
 idvec[-1*blank.nums] = as.vector(as.matrix(pdata[,2]))[ords]
+
+print(paste("K max is",Kmax, sep=" "))
+print(paste("blank columns between", empty.cnums,empty.cnums+1,sep=" "))
 ```
 
 ```{r}
@@ -133,9 +150,12 @@ for (i in 2:length(popvec)){
 
 ```{r}
 ## Plot for each figure; add an empty line between each population
-pdf.name = paste(gname, "_perK_top.pdf", sep="")
-pdf(pdf.name, height=dist*nrs, width=npr/80, colormodel="cmyk")
-par(mar=c(0.1,0.1,0.1,0.1))
+
+## Save a plot as pdf format
+#pdf.name = paste(gname, "_perK_top.pdf", sep="")
+#pdf(pdf.name, height=dist*nrs, width=npr/80, colormodel="cmyk")
+#par(mar=c(0.1,0.1,0.1,0.1))
+
 
 for (K in 3:Kmax) {
   tcnums = (sum(3:K)-2):sum(4:(K+1))
@@ -162,8 +182,9 @@ for (K in 3:Kmax) {
   
   plot(c(0, npr/2), c(0, (dist+1)*nrs+1), type="n", xaxt="n", yaxt="n", xlab="", ylab="", bty="n")
   rect(xleft=(xv-1)*0.5, xright=xv*0.5, ybottom=yv0, ytop=yv1, border=NA, col=cv)
+  ##Active below code to insert information of individuals
   ##text(x=lgxv, y=lgyv-0.1, label=lgv, srt=90, cex=0.5, adj=c(1,0.5), font=2, col=lg.cv)
-  text(x=lgxv*0.5, y=lgyv+1.1, label=cpopvec, srt=90, cex=0.5, adj=c(0,0.5), font=2, col=lg.cv2)
+  text(x=lgxv*0.5, y=lgyv+1.1, label=cpopvec, srt=90, cex=0.5, adj=c(0,0.5), font=4, col=lg.cv2)
 }
 dev.off()
 ```
@@ -183,9 +204,10 @@ for (J in 2:ncol(td2)) {
 tcv = rep(cvec, each=nrow(td2))
 ymin = 0; ymax = (dist2+1)*(Kmax-2)-dist2
 
-pdf.name = paste(gname, "_allK_top.pdf", sep="")
-pdf(pdf.name, height=1.0*(Kmax-2), width=npr2/8, colormodel="cmyk")
-par(mar=c(0.1,0.1,0.1,0.1))
+## Save a plot as pdf format
+#pdf.name = paste(gname, "_allK_top.pdf", sep="")
+#pdf(pdf.name, height=1.0*(Kmax-2), width=npr2/8, colormodel="cmyk")
+#par(mar=c(0.1,0.1,0.1,0.1))
 
 for (i in 1:nchunks) {
   tx0 = npr2 * (i-1)+1; tx1 = npr2*i
@@ -195,15 +217,15 @@ for (i in 1:nchunks) {
   cv = tcv[tfv1]
   
   tlg.fv1 = (1:length(popvec)) >= tx0 & (1:length(popvec)) <= tx1
-  lgv = popvec[tlg.fv1]
+  lgv = cpopvec[tlg.fv1]
   lgxv = (1:length(lgv))-0.5
   lg.cv2 = lg.cv[tlg.fv1]
   
   plot(c(0, npr2), c(ymin-1.2, ymax+1.2), type="n", xaxt="n", yaxt="n", xlab="", ylab="", bty="n")
   rect(xleft=xv-1, xright=xv, ybottom=yv0, ytop=yv1, border=NA, col=cv)
-  text(x=lgxv, y=ymin-0.1, label=lgv, srt=90, cex=0.7, adj=c(1,0.5), font=2, col=lg.cv2)
+  ##Active below code to insert information of individuals
+  ##text(x=lgxv, y=ymin-0.1, label=lgv, srt=90, cex=0.7, adj=c(1,0.5), font=2, col=lg.cv2)
   text(x=lgxv, y=ymax+0.1, label=lgv, srt=90, cex=0.7, adj=c(0,0.5), font=2, col=lg.cv2)
 }
 dev.off()
 ```
-
